@@ -33,11 +33,12 @@
 
   <script>
     const OKAYU_CHANNEL = "UCvaTdHTWBGv3MKj3KVqJVCw"; // Okayu's official channel
+    const API_KEY = "e927abd0-0d21-43ff-a866-718f79e33ab4"; // Your Holodex API key
     let videos = [];
     let currentIndex = 0;
     let player;
 
-    // Fetch livestreams from Holodex API (no key needed!)
+    // Fetch livestreams from Holodex API using API key
     async function fetchLivestreams() {
       let page = 0;
       let keepGoing = true;
@@ -45,7 +46,10 @@
       while (keepGoing) {
         const url = `https://holodex.net/api/v2/videos?channel_id=${OKAYU_CHANNEL}&status=past&type=stream&sort=oldest&offset=${page * 50}&limit=50`;
 
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          headers: { "X-APIKEY": API_KEY }
+        });
+
         const data = await res.json();
 
         if (data.length === 0) {
