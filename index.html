@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Okayu Chrono Livestream Player</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: #0f0f0f;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    #player {
+      margin-top: 20px;
+    }
+    #status {
+      margin-top: 20px;
+      font-size: 18px;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <h1>Okayu Livestreams — Beginning to End</h1>
+  <div id="status">Loading playlist…</div>
+  <div id="player"></div>
+
+  <!-- YouTube Iframe API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <script>
+    const OKAYU_CHANNEL = "UCvaTdHTWBGv3MKj3KVqJVCw"; // Okayu's official channel
+    let videos = [];
+    let currentIndex = 0;
+    let player;
+
+    // Fetch livestreams from Holodex API (no key needed!)
+    async function fetchLivestreams() {
+      let page = 0;
+      let keepGoing = true;
+
+      while (keepGoing) {
+        const url = `https://holodex.net/api/v2/videos?channel_id=${OKAYU_CHANNEL}&status=past&type=stream&sort=oldest&offset=${page * 50}&limit=50`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.length === 0) {
+          keepGoing = false;
+        } else {
+          videos.push(...data.map(v => v.id));
+          page++;
+        }
+      }
+
+      document.getElementById("status").innerText = `Loaded ${videos.length} livestreams`;
+    }
+
+    async function setup() {
+      await fetchLivestreams();
+      if (typeof YT !== "undefined" && YT.Player) {
+        onYouTubeIframeAPIReady();
+      }
+    }
+
+    function onYouTubeIframeAPIReady() {
+      if (videos.length === 0) {
+        document.getElementById("status").innerText = "No videos found.";
+        return;
+      }
+
+      player = new YT.Player("player", {
+        height: "720",
+        width: "1280",
+        videoId: videos[currentIndex],
+        playerVars: {
+          autoplay: 1,
+          controls: 1,
+          rel: 0
+        },
+        events: { onStateChange: onPlayerStateChange }
+      });
+    }
+
+    function onPlayerStateChange(event) {
+      if (event.data === YT.PlayerState.ENDED) {
+        currentIndex++;
+        if (currentIndex < videos.length) {
+          player.loadVideoById(videos[currentIndex]);
+        } else {
+          document.getElementById("status").innerText = "Playlist finished!";
+        }
+      }
+    }
+
+    setup();
+  </script>
+</body>
+</html>
